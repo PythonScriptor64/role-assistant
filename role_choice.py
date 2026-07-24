@@ -57,7 +57,7 @@ class RoleChoiceView(discord.ui.LayoutView):
     def __init__(self, command_interaction: discord.Interaction):
         super().__init__()
         container = discord.ui.Container(accent_color=discord.Color.blurple())
-        selected_role: int | None = None
+        self.selected_role: int | None = None
 
         container.add_item(
             discord.ui.TextDisplay(

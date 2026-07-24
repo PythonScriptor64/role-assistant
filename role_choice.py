@@ -1,0 +1,126 @@
+import discord
+import logging
+import uuid
+import json
+import role_manager
+
+logger = logging.getLogger(__name__)
+ROLE_FILENAME = "roles.json"
+
+try:
+    with open(ROLE_FILENAME, "r") as roles_json_f:
+        roles_json_s = roles_json_f.read()
+        roles_json = json.loads(roles_json_s)
+except FileNotFoundError:
+    roles_json = [
+        {
+            "name": f"{ROLE_FILENAME} not found",
+            "description": f"{ROLE_FILENAME} is missing, contact an administrator",
+            "role_id": 0
+        }
+    ]
+except json.JSONDecodeError:
+    roles_json = [
+        {
+            "name": f"{ROLE_FILENAME} failed to decode",
+            "description": f"{ROLE_FILENAME} is malformed, contact an administrator",
+            "role_id": 0
+        }
+    ]
+
+role_options = []
+role_uuid_lookup = dict()
+try:
+    for role in roles_json:
+        role_uuid = str(uuid.uuid4())
+        role_uuid_lookup[role_uuid] = role.get("role_id", 0)
+        role_options.append(
+            discord.SelectOption(
+                label=role.get("name", "MISSING_ROLE_NAME"),
+                description=role.get("description"),
+                value=role_uuid
+            )
+        )
+except Exception as err:
+    role_options = [
+        discord.SelectOption(
+            label=f"Error parsing {ROLE_FILENAME}",
+            description=f"{type(err).__name__}: {err}",
+            value="None"
+        )
+    ]
+
+async def testcallback(interaction: discord.Interaction):
+    await interaction.response.send_message("wasup")
+    
+class RoleChoiceView(discord.ui.LayoutView):
+    def __init__(self, command_interaction: discord.Interaction):
+        super().__init__()
+        container = discord.ui.Container(accent_color=discord.Color.blurple())
+        selected_role: int | None = None
+
+        container.add_item(
+            discord.ui.TextDisplay(
+                content="## Claim roles\n-# Select the role you affiliate with"
+            )
+        )
+        container.add_item(
+            discord.ui.ActionRow(
+                RoleDropdown(self)
+            )
+        )
+        container.add_item(
+            discord.ui.ActionRow(
+                ClaimButton(self),
+                UnclaimButton(self)
+            )
+        )
+
+        self.add_item(container)
+
+class RoleDropdown(discord.ui.Select):
+    def __init__(self, parent_view: RoleChoiceView):
+        self.parent_view = parent_view
+        super().__init__(
+            options=role_options,
+            placeholder="Select a role"
+        )
+        
+    async def callback(self, interaction: discord.Interaction):
+        role_uuid = self.values[0]
+        selected_option = role_uuid_lookup.get(role_uuid)
+
+        if selected_option is None:
+            await interaction.response.send_message("Role UUID lookup returned None; contact an administrator.")
+            return
+        
+        self.parent_view.selected_role = selected_option
+        await interaction.response.defer()
+
+class ClaimButton(discord.ui.Button):
+    def __init__(self, parent_view: RoleChoiceView):
+        self.parent_view = parent_view
+        super().__init__(
+            label="Claim",
+            style=discord.ButtonStyle.success
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        await role_manager.give_role(
+            interaction=interaction,
+            role_id=self.parent_view.selected_role
+        )
+
+class UnclaimButton(discord.ui.Button):
+    def __init__(self, parent_view: RoleChoiceView):
+        self.parent_view = parent_view
+        super().__init__(
+            label="Unclaim",
+            style=discord.ButtonStyle.danger
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        await role_manager.take_role(
+            interaction=interaction,
+            role_id=self.parent_view.selected_role
+        )

@@ -50,9 +50,6 @@ except Exception as err:
         )
     ]
 
-async def testcallback(interaction: discord.Interaction):
-    await interaction.response.send_message("wasup")
-    
 class RoleChoiceView(discord.ui.LayoutView):
     def __init__(self, command_interaction: discord.Interaction):
         super().__init__()
@@ -91,7 +88,10 @@ class RoleDropdown(discord.ui.Select):
         selected_option = role_uuid_lookup.get(role_uuid)
 
         if selected_option is None:
-            await interaction.response.send_message("Role UUID lookup returned None; contact an administrator.")
+            await interaction.response.send_message(
+                "Role UUID lookup returned None; contact an administrator.",
+                ephemeral=True
+            )
             return
         
         self.parent_view.selected_role = selected_option

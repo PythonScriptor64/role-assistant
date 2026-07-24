@@ -102,7 +102,7 @@ async def sync(interaction: discord.Interaction):
 async def selectroles(interaction: discord.Interaction):
     await interaction.response.send_message(
         view=role_choice.RoleChoiceView(interaction),
-        ephemeral=False # !!!!! SET THIS TO TRUE LATER !!!!!!
+        ephemeral=True
     )
 
 

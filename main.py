@@ -98,8 +98,17 @@ async def sync(interaction: discord.Interaction):
     else:
         await interaction.followup.send(f"Finished syncing slash commands; Synced {len(sync_result)} command(s)")
 
+@client.tree.command(description="Causes bot to exit; parent should restart the bot process")
+@admin_only_command()
+async def restart(interaction: discord.Interaction):
+    logger.info(f"Bot restart requested by '{interaction.user}' via /restart")
+    await interaction.response.send_message("Exiting!")
+    logger.info("Closing client")
+    await client.close()
+
 @client.tree.command(description="Claim a role")
 async def selectroles(interaction: discord.Interaction):
+    logger.info(f"/selectroles ran by {interaction.user}")
     await interaction.response.send_message(
         view=role_choice.RoleChoiceView(interaction),
         ephemeral=True

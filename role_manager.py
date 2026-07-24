@@ -44,11 +44,11 @@ async def take_role(interaction: discord.Interaction, role_id: int | None):
     
     role = interaction.user.guild.get_role(role_id)
     if role is None:
-            await interaction.response.send_message(
-                "Role does not exist; contact an administrator.",
-                ephemeral=True
-            )
-            return False
+        await interaction.response.send_message(
+            "Role does not exist; contact an administrator.",
+            ephemeral=True
+        )
+        return False
     
     if role not in interaction.user.roles:
         await interaction.response.send_message(
